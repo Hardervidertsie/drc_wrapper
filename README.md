@@ -26,7 +26,16 @@ lab-specific functionality for the drc package
  with e: the point of inflection (i.e. the point on the S shaped curve )
 
 
- startpars in order b c d e 
+
+Weibull W1.4:
+f(x)=c+(d−c)exp(−exp(b(log(x)−log(e)))).
+with b: Hill's slope of the curve (i.e. this is related to the steepness of the curve at point c).
+ with c: min value
+ with d: max value
+ with e: the point of inflection (i.e. the point on the S shaped curve )
+ 
+
+startpars in order b c d e 
  the ED function requires the arguments reference (control/upper), type (relative/absolute) (see ?ED for further arguments)
  step 1: setting drc_wrapper arguments
  set root dir of summary data files
