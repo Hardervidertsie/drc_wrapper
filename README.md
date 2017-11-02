@@ -3,7 +3,7 @@ lab-specific functionality for the drc package
 
  wrapper function for drc with summary data files as input.  
 
- ####input args:  
+ #### input args:  
  *summaryFile_root_dir*: root dir with files (character).   
  *featureName*: Measure of interest (character).   
   doseFun (character). ED Dose response derived measures vector of integers.
