@@ -3,7 +3,9 @@ lab-specific functionality for the drc package
 
  wrapper function for drc with summary data files as input.
 
- input arg: root dir with files (character). Measure of interest (character). 
+ ####input args:
+ *summaryFile_root_dir*: root dir with files (character).   
+ *featureName*: Measure of interest (character).   
  doseFun (character). ED Dose response derived measures vector of integers.
  controlTreat (character) if provided will divide by this value in treatment column on plate to plate and cell line basis
  minmaxNorm (boolean) if TRUE will perform minmax normalization on plate to plate and cell line basis
