@@ -103,6 +103,7 @@ data_result <- drc_wrapper(summaryFile_root_dir = "summaryDataFiles",
                            type = "relative", reference = "upper",
                            startpars = startpars, calibrated = TRUE, plotProcData = FALSE,
                            rmData = NULL, lowerl = c(NA, 0, 0, NA) , upperl = c(NA, 5, 5, NA),
+                           test1 = NULL, maxOfTime = FALSE,
                            finalAnalysis = FALSE)
 
 # inspect plots and modify

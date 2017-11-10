@@ -1,4 +1,4 @@
-drc_wrapper <- function(summaryFile_root_dir =,   
+drc_wrapper <- function(summaryFile_root_dir = ".",   
                         doseFun = "LL.4",   
                         featureName = NULL,  
                         EDs = c(10, 25, 50, 80),  
@@ -14,6 +14,7 @@ drc_wrapper <- function(summaryFile_root_dir =,
                         lowerl = NULL, upperl = NULL,
                         rmData = NULL, 
                         test1 = NULL,
+                        maxOfTime = FALSE,
                         finalAnalysis = FALSE, ...) {
   
   if(DEBUG){
@@ -111,6 +112,11 @@ drc_wrapper <- function(summaryFile_root_dir =,
   
   my_data <- do.call('rbind', data_list)
   
+  
+  
+  
+  
+  
   # validate input arguments and data
   if(!all(c('cell_line', 'treatment', 'dose_uM', 'plateID', 
             'replID', 'variable', 'value') %in%
@@ -121,14 +127,35 @@ drc_wrapper <- function(summaryFile_root_dir =,
          'replID', 'variable', 'value' ")
   }
   
+  if(!is.logical(maxOfTime)){
+    stop("logical maxOfTime expected")
+  }
+  
+  if(!maxOfTime) {
   if( !is.null(my_data$timeID) | !is.null(my_data$timeAfterExposure) ) {
     if(length(unique(my_data$timeID)) > 1 | 
        length(unique(my_data$timeAfterExposure)) > 1 ) {
       warning("Multiple unique time points detected, 
               dose response modeling input is not suited for time course data, 
               please aggregate first.")
+      }
     }
+  }
+  
+  # aggregate over time
+  if(maxOfTime){
+    
+    my_data <- aggregate(value ~ cell_line + treatment + dose_uM + plateID + 
+                         replID + variable, data = my_data, FUN = max )
+  
+print(writeLines("aggregated: (value ~ cell_line + treatment + dose_uM + plateID + 
+                         replID + variable, FUN = max) \n 
+                 consider performing time-removing aggregation yourself")
+      )
+warning("aggregated over time. Consider performing time-removing aggregation yourself")
     }
+  
+  
   
   if(!is.null(controlTreat)) {
     if(!controlTreat %in% my_data$treatment) {
@@ -203,16 +230,16 @@ drc_wrapper <- function(summaryFile_root_dir =,
     
     normFun <- function(dataIn) {
       
-      minV <- aggregate(data = dataIn, value ~ plateID + cell_line + replID, 
+      minV <- aggregate(data = dataIn, value ~ plateID + cell_line, 
                         FUN = function(x) min(x, na.rm = TRUE))
-      maxV <- aggregate(data = dataIn, value ~ plateID + cell_line + replID, 
+      maxV <- aggregate(data = dataIn, value ~ plateID + cell_line, 
                         FUN = function(x) max(x, na.rm = TRUE))
       
       colnames(minV)[colnames(minV) == "value"] <- "minV"
       colnames(maxV)[colnames(maxV) == "value"] <- "maxV"
       
-      dataIn <- merge(dataIn, minV, by = c("plateID", "cell_line", "replID"), all.x = TRUE)
-      dataIn <- merge(dataIn, maxV, by = c("plateID", "cell_line", "replID"), all.x = TRUE)
+      dataIn <- merge(dataIn, minV, by = c("plateID", "cell_line"), all.x = TRUE)
+      dataIn <- merge(dataIn, maxV, by = c("plateID", "cell_line"), all.x = TRUE)
       
       dataIn$norm_value <- (dataIn$value - dataIn$minV) / (dataIn$maxV - dataIn$minV)
       dataIn$minV <- NULL
@@ -230,7 +257,7 @@ drc_wrapper <- function(summaryFile_root_dir =,
   # dose response modelin:
   # check # concentrations per treatment
   
-  my_data$CurveName <- paste(my_data$plateID, my_data$cell_line, my_data$replID, my_data$treatment)
+  my_data$CurveName <- paste(my_data$plateID, my_data$cell_line, my_data$treatment)
   
   indrm <- table(my_data$CurveName) < 10
   rmCurves <- names(table(my_data$CurveName))[indrm]
