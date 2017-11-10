@@ -79,7 +79,7 @@ startpars in order b c d e
  define 1 set of start parameters eg: startpars[[1]] <- c(1,1,1,2)  
  run with calibrated = FALSE and plotProcData = TRUE  
  adjust minRespL startpars or remove data with rmData if numerical optimizations are not converging  
- You might want to remove dropping stress response signals at higher concentrations if you know cells are dieing.   
+ You might want to remove dropping stress response signals at higher concentrations if you know cells are dying.   
  check your plot in /output (plotProcData = TRUE creates figure of your data) if you change rmData, minRespL or nConc  
 
  ##### step 3: perform ED estimations   
