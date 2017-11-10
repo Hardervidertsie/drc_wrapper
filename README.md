@@ -22,6 +22,7 @@ lab-specific functionality for the drc package
  *Upperl* high bounds for parameters, passed on to ED function, see drc::ED for details 
   *rmData*: data.frame with identical headers and entries to remove. Possible headers are 'cell_line', 'treatment', 'dose_uM', 'plateID', 'replID', 'plateWellID', 'variable' Use to remove e.g. treatmant-dose combinations where GFP response declines due to cell death  
   *test1* (integer or NULL) usefull to start testing on a single curve  
+  *maxOfTime* (logical). In case you have time course data you can choose to select the max value from each individual time curve.  
   *finalAnalysis*: attempts drm function with identical c & d parameters and separate = TRUE, performs mixed linear modeling with interaction terms. Will likely only work with very high quality data or low amount of curves. See drm manual for details.    
 
 #### default args:  
@@ -40,7 +41,8 @@ summaryFile_root_dir = ".",
                         plotProcData = TRUE,  
                         lowerl = NULL, upperl = NULL,  
                         rmData = NULL,  
-                        test1 = NULL,  
+                        test1 = NULL, 
+                        maxOfTime = NULL,
                         finalAnalysis = FALSE, ...)  
                         
  ### Possible workflow:                         
