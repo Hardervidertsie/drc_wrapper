@@ -263,9 +263,9 @@ warning("aggregated over time. Consider performing time-removing aggregation you
   rmCurves <- names(table(my_data$CurveName))[indrm]
   
   if(sum(indrm)!=0) {
-    write.table(rmCurves, file = 'output/removed_curves.txt', sep ='\t', col.names = NA)
+    write.table(rmCurves, file = 'drc_output/removed_curves.txt', sep ='\t', col.names = NA)
     warning("Curves removed becuase n-concentrations < specified number, 
-            consult \'output/removed_curves/txt\'")
+            consult \'drc_output/removed_curves/txt\'")
   }
   
   my_data <-  my_data[ !my_data$CurveName %in% rmCurves, ]
@@ -315,7 +315,7 @@ warning("aggregated over time. Consider performing time-removing aggregation you
     
     pdfsize <- 4 + round(length(all.curves)/3, digits=0)
     
-    pdf(file = paste0('output/', featureName, '_allCurves.pdf'), height = pdfsize, width = pdfsize)
+    pdf(file = paste0('drc_output/', featureName, '_allCurves.pdf'), height = pdfsize, width = pdfsize)
     
     p<-ggplot(data = my_data_a, aes( x = log(dose_uM+0.0001), y = value ))  +
       geom_point(aes(color = factor(replID))) + facet_wrap(~ CurveName) + xlab("log(dose_uM + 0.0001)")
