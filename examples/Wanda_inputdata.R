@@ -22,9 +22,9 @@ data_result <- drc_wrapper(summaryFile_root_dir = "summaryDataFiles",
                             doseFun = "W1.4", zeroDoseTreatment = "DMSO",
                            EDs = c(10, 25, 50, 80),
                            type = "relative", reference = "control",
-                           startpars = startpars, calibrated = TRUE, plotProcData = FALSE,
+                           startpars = startpars, calibrated = FALSE, plotProcData = FALSE,
                            rmData = NULL, lowerl = NULL, upperl = NULL,
-                           finalAnalysis = FALSE, test1 = NULL)
+                           finalAnalysis = FALSE, test1 = NULL, maxOfTime =FALSE)
 
 # inspect plots and modify
 i=0
