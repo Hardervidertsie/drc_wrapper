@@ -259,7 +259,7 @@ warning("aggregated over time. Consider performing time-removing aggregation you
   
   my_data$CurveName <- paste(my_data$plateID, my_data$cell_line, my_data$treatment)
   
-  indrm <- table(my_data$CurveName) < 10
+  indrm <- table(my_data$CurveName) < nConc
   rmCurves <- names(table(my_data$CurveName))[indrm]
   
   if(sum(indrm)!=0) {
