@@ -56,7 +56,9 @@ summaryFile_root_dir = ".",
 use b c d e parameters for the 4-parameter log logistic functions as described below.  
 keep calibrated set to FALSE untill the fits are converging.  
 
-$$ f(x) = c + \frac{d-c}{1+\exp(b(\log(x)-\log(e)))} $$
+<img src="https://latex.codecogs.com/gif.latex?f%28x%29%20%3D%20c%20&plus;%20%5Cfrac%7Bd-c%7D%7B1&plus;%5Cexp%28b%28%5Clog%28x%29-%5Clog%28e%29%29%29%7D"></img>
+
+[comment]<$ f(x) = c + \frac{d-c}{1+\exp(b(\log(x)-\log(e)))} $>
 
 with b: Hill's slope of the curve (i.e. this is related to the steepness of the curve at point c).   
 with c: min value  
@@ -65,8 +67,7 @@ with e: the point of inflection (i.e. the point on the S shaped curve )
 
 
 Weibull W1.4:  
-
-$$ f(x)=c+(d−c)exp(−exp(b(log(x)−log(e)))). $$
+$ f(x)=c+(d-c)exp(-exp(b(log(x)-log(e)))). $
 
 with b: Hill's slope of the curve (i.e. this is related to the steepness of the curve at point c).  
 with c: min value  
