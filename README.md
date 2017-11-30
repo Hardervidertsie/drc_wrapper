@@ -9,22 +9,21 @@
 
 2. **`doseFun`**: LL.4 for 4-parameter log logistic or W1.4/ W2.4 for 4 par Weibull (character).  
 3.  **`featureName`**: Measure of interest (character).   
- 
-4. **`EDs`** Dose response derived measures vector of numerics.    
-5.  **`controlTreat`** (character) if provided will divide by this value on plate to plate and cell line basis.  
-6.  **`minmaxNorm`** (boolean) if TRUE will perform minmax normalization on plate to plate and cell line basis.  
+4. **`EDs`**: Dose response derived measures vector of numerics.    
+5.  **`controlTreat`**: (character) if provided, will divide by this value on plate to plate and cell line basis.  
+6.  **`minmaxNorm`**: (boolean) if TRUE will perform minmax normalization on plate to plate and cell line basis.  
 7.  **`zeroDoseTreatment`** (character) if any what treatment should be plate-cell_line specific zero concentration?  
 8.  **`nConc`**: Number of concentrations in your dose responses, dose-response curves with less than *nConc* are removed.  
-9. **`minRespL`** minimum absoluut response level defined as max-min for the dose response curve. Note if *minmaxNorm* = TRUE or
-10.  **`controLTreat`** is defined the scale of your input values will change accordingly.  
-11.  **`startpars`** list containing 4 parameters start values in a vector per slot; index of the slot should correspond to curve. Slots can be NULL  *DEBUG*: only for debugging script, leave as FALSE. The order is b c d e with b = slope, c = min, d = max, e = inflection point  
+9. **`minRespL`**: minimum absoluut response level defined as max-min for the dose response curve. Note if *minmaxNorm* = TRUE or
+10.  **`controLTreat`**: if defined, the scale of your input values will change accordingly.  
+11.  **`startpars`**: list containing 4 parameters start values in a vector per slot; index of the slot should correspond to curve. Slots can be NULL  *DEBUG*: only for debugging script, leave as FALSE. The order is b c d e with b = slope, c = min, d = max, e = inflection point  
 12. **`calibrated`**: setting to FALSE is usefull to find parameter solutions one by one and adjust start-values. No dose response estimates are calculated unless set to TRUE (logical)  
-13.  **`plotProcData`** Sript is slower, set to FALSE only after modifying filter or normalization steps. plot normalized non fitted data, handy for checking normalization/ data and estimate starting pars (logical) 
-14.  **`lowerl`** lower bounds for parameters, passed on to ED function, see drc::ED for details 
-15.  **`Upperl`** high bounds for parameters, passed on to ED function, see drc::ED for details 
+13.  **`plotProcData`**: Sript is slower, set to FALSE only after modifying filter or normalization steps. plot normalized non fitted data, handy for checking normalization/ data and estimate starting pars (logical) 
+14.  **`lowerl`**: lower bounds for parameters, passed on to ED function, see drc::ED for details 
+15.  **`Upperl`**: high bounds for parameters, passed on to ED function, see drc::ED for details 
 16. **`rmData`**: data.frame with identical headers and entries to remove. Possible headers are 'cell_line', 'treatment', 'dose_uM', 'plateID', 'replID', 'plateWellID', 'variable' Use to remove e.g. treatmant-dose combinations where GFP response declines due to cell death  
-17.   **`test1`** (integer or NULL) usefull to start testing on a single curve  
-18.   **`maxOfTime`** (logical). In case you have time course data you can choose to select the max value from each individual time curve.  
+17.   **`test1`**: (integer or NULL) usefull to start testing on a single curve  
+18.   **`maxOfTime`**: (logical). In case you have time course data you can choose to select the max value from each individual time curve.  
 19.   **`finalAnalysis`**: attempts drm function with identical c & d parameters and separate = TRUE, performs mixed linear modeling with interaction terms. Will likely only work with very high quality data or low amount of curves. See drm manual for details.    
 
 ### Default args:  
@@ -56,8 +55,7 @@ summaryFile_root_dir = ".",
 use b c d e parameters for the 4-parameter log logistic functions as described below.  
 keep calibrated set to FALSE untill the fits are converging.  
 
-<img src="https://latex.codecogs.com/gif.latex?f%28x%29%20%3D%20c%20&plus;%20%5Cfrac%7Bd-c%7D%7B1&plus;%5Cexp%28b%28%5Clog%28x%29-%5Clog%28e%29%29%29%7D"></img>
-
+$$ f(x) = c + \frac{d-c}{1+\exp(b(\log(x)-\log(e)))} $$
 
 with b: Hill's slope of the curve (i.e. this is related to the steepness of the curve at point c).   
 with c: min value  
@@ -67,8 +65,7 @@ with e: the point of inflection (i.e. the point on the S shaped curve )
 
 Weibull W1.4:  
 
-
-$ f(x)=c + (d - c)exp(-exp(b(log(x) - log(e)))). $
+$$ f(x)=c+(d−c)exp(−exp(b(log(x)−log(e)))). $$
 
 with b: Hill's slope of the curve (i.e. this is related to the steepness of the curve at point c).  
 with c: min value  
