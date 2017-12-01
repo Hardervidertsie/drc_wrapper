@@ -6,15 +6,14 @@
 ### Input args:  
 
 1. **`summaryFile_root_dir`**: root dir with files (character).   
-
 2. **`doseFun`**: LL.4 for 4-parameter log logistic or W1.4/ W2.4 for 4 par Weibull (character).  
 3.  **`featureName`**: Measure of interest (character).   
 4. **`EDs`**: Dose response derived measures vector of numerics.    
 5.  **`controlTreat`**: (character) if provided, will divide by this value on plate to plate and cell line basis.  
-6.  **`minmaxNorm`**: (boolean) if TRUE will perform minmax normalization on plate to plate and cell line basis.  
-7.  **`zeroDoseTreatment`** (character) if any what treatment should be plate-cell_line specific zero concentration?  
-8.  **`nConc`**: Number of concentrations in your dose responses, dose-response curves with less than *nConc* are removed.  
-9. **`minRespL`**: minimum absoluut response level defined as max-min for the dose response curve. Note if *minmaxNorm* = TRUE or
+6.  **`minmaxNorm`**: (boolean) if TRUE, will perform minmax normalization on plate to plate and cell line basis.  
+7.  **`zeroDoseTreatment`** (character) if any, what treatment should be plate-cell_line specific zero concentration?  
+8.  **`nConc`**: Number of concentrations in your dose responses, dose-response curves with less than `nConc` are removed.  
+9. **`minRespL`**: minimum absoluut response level defined as max-min for the dose response curve. Note if `minmaxNorm = TRUE` or
 10.  **`controLTreat`**: if defined, the scale of your input values will change accordingly.  
 11.  **`startpars`**: list containing 4 parameters start values in a vector per slot; index of the slot should correspond to curve. Slots can be NULL  *DEBUG*: only for debugging script, leave as FALSE. The order is b c d e with b = slope, c = min, d = max, e = inflection point  
 12. **`calibrated`**: setting to FALSE is usefull to find parameter solutions one by one and adjust start-values. No dose response estimates are calculated unless set to TRUE (logical)  
@@ -24,7 +23,7 @@
 16. **`rmData`**: data.frame with identical headers and entries to remove. Possible headers are 'cell_line', 'treatment', 'dose_uM', 'plateID', 'replID', 'plateWellID', 'variable' Use to remove e.g. treatmant-dose combinations where GFP response declines due to cell death  
 17.   **`test1`**: (integer or NULL) usefull to start testing on a single curve  
 18.   **`maxOfTime`**: (logical). In case you have time course data you can choose to select the max value from each individual time curve.  
-19.   **`finalAnalysis`**: attempts drm function with identical c & d parameters and separate = TRUE, performs mixed linear modeling with interaction terms. Will likely only work with very high quality data or low amount of curves. See drm manual for details.    
+19.   **`finalAnalysis`**: attempts drm function with identical c & d parameters and `separate = TRUE`, performs mixed linear modeling with interaction terms. Will likely only work with very high quality data or low amount of curves. See drm manual for details.    
 
 ### Default args:  
 ```R
@@ -76,13 +75,13 @@ startpars in order b c d e
  
 #### step 1: setting drc_wrapper arguments 
 
-set root dir of summary data files  
-set feature name of interest.  
-set controlTreat if you require fold change with respect to defined controlTreat  
-set minmaxNorm if you require minmax normalization  
-set zeroDoseTreatment so all curves have a zero concentration  
-set nConc to number of concentrations in your dose response curves   
-set minRespL to minimum response level (recommended as will remove non responsive curves)  
+* set root dir of summary data files  
+* set feature name of interest.  
+* set `controlTreat` if you require fold change with respect to defined `controlTreat`  
+* set `minmaxNorm` if you require minmax normalization  
+* set `zeroDoseTreatment` so all curves have a zero concentration  
+* set `nConc` to number of concentrations in your dose response curves   
+* set `minRespL` to minimum response level (recommended as will remove non responsive curves)  
   
 test with `test1 = 1` (or other curve number) and plot fit for manual inspection  
   
@@ -90,9 +89,9 @@ test with `test1 = 1` (or other curve number) and plot fit for manual inspection
 
 define 1 set of start parameters eg: `startpars[[1]] <- c(1,1,1,2)`
 run with `calibrated = FALSE` and `plotProcData = TRUE`  
-adjust minRespL startpars or remove data with rmData if numerical optimizations are not converging  
+adjust `minRespL` startpars or remove data with `rmData` if numerical optimizations are not converging  
 You might want to remove dropping stress response signals at higher concentrations if you know cells are dying.   
-check your plot in /output (`plotProcData = TRUE` creates figure of your data) if you change rmData, minRespL or nConc  
+check your plot in /output (`plotProcData = TRUE` creates figure of your data) if you change `rmData`, `minRespL` or `nConc`.  
 
 #### step 3: perform ED estimations   
 
