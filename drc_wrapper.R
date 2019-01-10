@@ -1,5 +1,7 @@
 drc_wrapper <- function(summaryFile_root_dir = ".",   
-                        doseFun = "LL.4",   
+                        doseFun = "LL.4", 
+                        nReps = NULL,
+                        CurveName = NULL,
                         featureName = NULL,  
                         EDs = c(10, 25, 50, 80),  
                         controlTreat = NULL, # to divide by  
@@ -15,7 +17,9 @@ drc_wrapper <- function(summaryFile_root_dir = ".",
                         rmData = NULL, 
                         test1 = NULL,
                         maxOfTime = FALSE,
-                        finalAnalysis = FALSE, ...) {
+                        finalAnalysis = FALSE,
+                        yesprint = TRUE,
+                        startZero = TRUE, ...) {
   
   if(DEBUG){
     summaryFile_root_dir <- "summaryDataFiles"
@@ -39,6 +43,10 @@ drc_wrapper <- function(summaryFile_root_dir = ".",
   require(ggplot2)
   if(grep("4", doseFun) != 1) {
     stop("Currently only 4-parameter models implemented in drc_wrapper")
+  }
+  
+  if(is.null(nReps)){
+    stop("Define nReps, the number of reps within the CurveName")
   }
   
   if(!is.null(test1) & calibrated){
@@ -99,6 +107,7 @@ drc_wrapper <- function(summaryFile_root_dir = ".",
   }
   
   
+  if(is.character(summaryFile_root_dir)){
   file_list <- dir(summaryFile_root_dir)[grepl(".txt", dir(summaryFile_root_dir))]
   if( length(file_list) == 0 ) {
     stop("no files in provided root dir")
@@ -112,24 +121,31 @@ drc_wrapper <- function(summaryFile_root_dir = ".",
   
   my_data <- do.call('rbind', data_list)
   
+  } else if(is.data.frame(summaryFile_root_dir)){
+    my_data <- summaryFile_root_dir 
+  } else {
+    stop("summaryFile_root_dir should be a character string defining path to summary data files or a data.frame")
+  }
   
   
-  
-  
+  if(is.null(my_data[, CurveName])){
+    stop("define curve name")
+  }
   
   # validate input arguments and data
   if(!all(c('cell_line', 'treatment', 'dose_uM', 'plateID', 
-            'replID', 'variable', 'value') %in%
+            'replID', 'variable', 'norm_value') %in%
           colnames(my_data))
   ) {
     stop("drc_wrapper requires the following headers:\n
          'cell_line', 'treatment', 'dose_uM', 'plateID', 
-         'replID', 'variable', 'value' ")
+         'replID', 'variable', 'norm_value' ")
   }
   
   if(!is.logical(maxOfTime)){
     stop("logical maxOfTime expected")
   }
+  
   
   if(!maxOfTime) {
   if( !is.null(my_data$timeID) | !is.null(my_data$timeAfterExposure) ) {
@@ -145,14 +161,14 @@ drc_wrapper <- function(summaryFile_root_dir = ".",
   # aggregate over time
   if(maxOfTime){
     
-    my_data <- aggregate(value ~ cell_line + treatment + dose_uM + plateID + 
+    my_data <- aggregate(norm_value ~ cell_line + treatment + dose_uM + plateID + 
                          replID + variable, data = my_data, FUN = max )
-  
-print(writeLines("aggregated: (value ~ cell_line + treatment + dose_uM + plateID + 
+ if(yesprint){ 
+print(writeLines("aggregated: (norm_value ~ cell_line + treatment + dose_uM + plateID + 
                          replID + variable, FUN = max) \n 
                  consider performing time-removing aggregation yourself")
       )
-warning("aggregated over time. Consider performing time-removing aggregation yourself")
+ }
     }
   
   
@@ -163,12 +179,12 @@ warning("aggregated over time. Consider performing time-removing aggregation you
     } 
   }
   
-  if(!featureName %in% my_data$variable) {
-    stop("Specified featureName not found in variable entries")
+  if(!(any(featureName %in% my_data$variable))) {
+    warning("Specified featureName not found in variable entries")
   } 
   
   my_data <- my_data[my_data$variable %in% featureName, ]
-  
+  #my_data$norm_value <- abs(my_data$norm_value) # only positive? 
   
   
   if(!is.null(zeroDoseTreatment)) {
@@ -180,7 +196,7 @@ warning("aggregated over time. Consider performing time-removing aggregation you
     
     all_treats <- unique(my_data$treatment)
     
-    ii=1;i=2
+   # ii=1;i=2
     outputlist = alist()
     outputcomps = alist()
     my_data$tmp_plateID_cell_line <- paste0(my_data$plateID, my_data$cell_line)
@@ -209,30 +225,32 @@ warning("aggregated over time. Consider performing time-removing aggregation you
     control_data <- my_data[ my_data$treatment == controlTreat, ]
     
     control_data_aggr <- aggregate( data = control_data, 
-                                    value ~ plateID + replID + cell_line,
+                                    norm_value ~ plateID + replID + cell_line,
                                     mean )
     colnames(control_data_aggr)[ colnames(control_data_aggr) == "value"] <- "controlValue"
     
     my_data <- merge(my_data , control_data_aggr, 
                      by = c('plateID', 'replID', 'cell_line' ),
                      all.x = TRUE, all.y=FALSE)
-    my_data$value <- my_data$value / my_data$controlValue
+    my_data$norm_value <- my_data$norm_value / my_data$controlValue
     my_data$controlValue <- NULL
     my_data$variable <- paste0(my_data$variable, "vs", controlTreat )
   }
   
   my_data <- aggregate(data = my_data, 
-                       value ~  treatment + dose_uM + plateID + replID + variable + cell_line ,
+                       norm_value ~  treatment + dose_uM + plateID + replID + variable + cell_line + get(CurveName) ,
                        mean)
   
+  
+  colnames(my_data)[colnames(my_data)=="get(CurveName)"] <- "curve_id"
   
   if( minmaxNorm ) { 
     
     normFun <- function(dataIn) {
       
-      minV <- aggregate(data = dataIn, value ~ plateID + cell_line, 
+      minV <- aggregate(data = dataIn, norm_value ~ plateID + cell_line, 
                         FUN = function(x) min(x, na.rm = TRUE))
-      maxV <- aggregate(data = dataIn, value ~ plateID + cell_line, 
+      maxV <- aggregate(data = dataIn, norm_value ~ plateID + cell_line, 
                         FUN = function(x) max(x, na.rm = TRUE))
       
       colnames(minV)[colnames(minV) == "value"] <- "minV"
@@ -241,10 +259,10 @@ warning("aggregated over time. Consider performing time-removing aggregation you
       dataIn <- merge(dataIn, minV, by = c("plateID", "cell_line"), all.x = TRUE)
       dataIn <- merge(dataIn, maxV, by = c("plateID", "cell_line"), all.x = TRUE)
       
-      dataIn$norm_value <- (dataIn$value - dataIn$minV) / (dataIn$maxV - dataIn$minV)
+      dataIn$norm_value <- (dataIn$norm_value - dataIn$minV) / (dataIn$maxV - dataIn$minV)
       dataIn$minV <- NULL
       dataIn$maxV <- NULL
-      dataIn$value <- NULL
+      dataIn$norm_value <- NULL
       colnames(dataIn)[colnames(dataIn) == "norm_value"] <- "value"
       dataIn$variable <- paste0("mmn_", dataIn$variable)
       return(dataIn)  
@@ -257,10 +275,10 @@ warning("aggregated over time. Consider performing time-removing aggregation you
   # dose response modelin:
   # check # concentrations per treatment
   
-  my_data$CurveName <- paste(my_data$plateID, my_data$cell_line, my_data$treatment)
+ 
   
-  indrm <- table(my_data$CurveName) < nConc
-  rmCurves <- names(table(my_data$CurveName))[indrm]
+  indrm <- table(my_data[, CurveName]) < (nConc * nReps)
+  rmCurves <- names(table(my_data[ ,CurveName]))[indrm]
   
   if(sum(indrm)!=0) {
     write.table(rmCurves, file = 'drc_output/removed_curves.txt', sep ='\t', col.names = NA)
@@ -268,43 +286,71 @@ warning("aggregated over time. Consider performing time-removing aggregation you
             consult \'drc_output/removed_curves/txt\'")
   }
   
-  my_data <-  my_data[ !my_data$CurveName %in% rmCurves, ]
+  my_data <-  my_data[ !my_data[, CurveName] %in% rmCurves, ]
   
   
   
   my_data$CurveName <- paste(my_data$cell_line, my_data$treatment)
   
-  my_data_a <- aggregate(value ~treatment + dose_uM + replID + cell_line + CurveName, data = my_data, mean )
+  my_data_a <- aggregate(norm_value ~treatment + dose_uM + replID + cell_line + CurveName, data = my_data, mean )
   
   all.curves <- unique(my_data_a$CurveName)
   
+  
+  # create concentration level to remove certain concentrations by index
+  
+  dose_table <-  my_data_a %>% arrange(cell_line,  treatment, dose_uM ) %>%
+    ungroup() %>%
+    dplyr::select(cell_line, treatment, dose_uM) %>%
+    unique() %>%
+    group_by(cell_line, treatment) %>%
+    mutate(dose_level = 1:n())
+  
+  my_data_a <- left_join(my_data_a, dose_table, by = c("cell_line", "treatment", "dose_uM"))
+  
   if(!is.null(rmData)){
+  
+    
     
     if(!all(colnames(rmData) %in% colnames(my_data_a))  ){
       stop("rmData headers not found in aggregated data")
     }
-    
-    
-    my_data_a$dose_uM <- as.character(my_data_a$dose_uM)
+    #my_data_a$dose_uM <- as.character(my_data_a$dose_uM)
     indToRm <- match( colnames(rmData) ,colnames(my_data_a) )
     rmData$rmNames<- apply(rmData, 1, function(x) {paste(as.character(x),collapse = "_" )})
+    rmData$rmNames <- gsub(" ", "", rmData$rmNames)
     my_data_a$rmNames <- apply(my_data_a[, indToRm], 1, function(x) {paste(as.character(x), collapse = "_")})
+    my_data_a$rmNames <- gsub(" ", "", my_data_a$rmNames)
     my_data_a <- my_data_a[!my_data_a$rmNames %in% rmData$rmNames, ]
     
     all.curves <- unique(my_data_a$CurveName)
     my_data_a$dose_uM <- as.numeric(my_data_a$dose_uM)
   }
+  #my_data_a$rmNames[my_data_a$treatment == "TNF" & my_data_a$cell_line == "HepG2 A20 GFP"]
+  #sum(my_data_a$rmNames %in% rmData$rmNames)
+ 
+  
+  # remove to low number of concentrations again (after rmData):
+  tmp_dose_count <- unique(my_data_a[, c("CurveName", "dose_uM")])
+  
+  indrm <- table(tmp_dose_count$CurveName) < nConc 
+  rmCurves <- indrm[indrm==TRUE]
   
   
-  if(!is.null(minRespL)){
+  my_data_a <-  my_data_a[ !my_data_a[, "CurveName"] %in% names(rmCurves), ]
+  
+  
+  
+  
+   if(!is.null(minRespL)){
     
     # code to remove non responsive curves here
-    
-    respdata <- aggregate( value ~ CurveName, data = my_data_a, 
+    my_data_a_tmp <- aggregate(norm_value ~treatment + dose_uM + cell_line + CurveName, data = my_data_a, mean )
+    respdata <- aggregate( norm_value ~ CurveName, data = my_data_a_tmp, 
                            FUN = function(x){
                              max(x) - min(x)
                            })  
-    rmCurvesResp <- respdata$CurveName[respdata$value < minRespL]
+    rmCurvesResp <- respdata$CurveName[respdata$norm_value < minRespL]
     my_data_a <- my_data_a[!my_data_a$CurveName %in% rmCurvesResp, ]
     all.curves <- unique(my_data_a$CurveName)
   }
@@ -315,10 +361,11 @@ warning("aggregated over time. Consider performing time-removing aggregation you
     
     pdfsize <- 4 + round(length(all.curves)/3, digits=0)
     
-    pdf(file = paste0('drc_output/', featureName, '_allCurves.pdf'), height = pdfsize, width = pdfsize)
+    pdf(file = paste0('drc_output/', unlist(featureName), '_allCurves.pdf'), height = pdfsize, width = pdfsize)
     
-    p<-ggplot(data = my_data_a, aes( x = log(dose_uM+0.0001), y = value ))  +
-      geom_point(aes(color = factor(replID))) + facet_wrap(~ CurveName) + xlab("log(dose_uM + 0.0001)")
+    p<-ggplot(data = my_data_a, aes( x = log(dose_uM+0.0001), y = norm_value ))  +
+      geom_point(aes(color = factor(replID))) + facet_wrap(~ CurveName) + xlab("log(dose_uM + 0.0001)") +
+      coord_cartesian(ylim = c(-2, 2))
     print(p)
     dev.off()
   }
@@ -335,31 +382,60 @@ warning("aggregated over time. Consider performing time-removing aggregation you
   }
   }
   
+  
+  
+  ## move all curves to start at zero
+  if(startZero){
+  for( k in seq_along(all.curves)){
+  
+    
+   tmp <- my_data_a[my_data_a$CurveName == all.curves[k],]
+   tmp <- aggregate(norm_value ~ dose_level, data = tmp, FUN = mean)
+   tmp <- tmp[tmp$dose_level == min(tmp$dose_level), "norm_value"]
+   
+   my_data_a[my_data_a$CurveName == all.curves[k], "norm_value"] <- 
+     my_data_a[my_data_a$CurveName == all.curves[k], "norm_value"] - tmp
+   
+    }
+  
+  
+  }
+  
+  
   #slope min max inflection
   if(!is.null(test1) & !is.null(startpars)) {
     model.out = alist()
     i <- test1
     sel_data <- my_data_a[ my_data_a$CurveName == all.curves[i], ]
+    
+    if(yesprint){ 
     print(paste(i, ": ", all.curves[i]))
-    model.out[[i]]<- eval(
+    }
+      model.out[[i]]<- eval(
       parse( text =
-               paste("drm(value ~ dose_uM, type = \"continuous\", start = startpars[[i]],
+               paste("drm(norm_value ~ dose_uM, type = \"continuous\", start = startpars[[i]],
                      lowerl = lowerl, upperl = upperl, separate = TRUE,
                      data = sel_data, fct =", paste0(doseFun, '()', ")"))))
-    print(model.out[[i]])
+      if(yesprint){ 
+      print(model.out[[i]])
+      }
   } 
   
   if(!is.null(test1) & is.null(startpars)){
     model.out = alist()
     i <- test1
     sel_data <- my_data_a[ my_data_a$CurveName == all.curves[i], ]
+    if(yesprint){ 
     print(paste(i, ": ", all.curves[i]))
+    }
     model.out[[i]]<- eval(
       parse( text =
-               paste("drm(value ~ dose_uM, type = \"continuous\",
+               paste("drm(norm_value ~ dose_uM, type = \"continuous\",
                      lowerl = lowerl, upperl = upperl, separate = TRUE,
                      data = sel_data, fct =", paste0(doseFun, '()', ")"))))
+    if(yesprint){ 
     print(model.out[[i]])
+    }
   }
   
   if(!calibrated & is.null(test1)){
@@ -370,17 +446,20 @@ warning("aggregated over time. Consider performing time-removing aggregation you
     for(i in seq_along(all.curves)){
       
       sel_data <- my_data_a[ my_data_a$CurveName == all.curves[i], ]
+      if(yesprint){
       print(paste(i, ": ", all.curves[i]))
+      }
       model.out[[i]]<- eval(
         parse( text =
-                 paste("drm(value ~ dose_uM, type = \"continuous\", start = startpars[[i]],
+                 paste("drm(norm_value ~ dose_uM, type = \"continuous\", start = startpars[[i]],
                        lowerl = lowerl, upperl = upperl, separate = TRUE,
                        data = sel_data, fct =", paste0(doseFun, '()', ")")
         )
         )
                  )
+      if(yesprint){ 
       print(model.out[[i]])
-      
+      }
       
     }
    } else{
@@ -389,17 +468,20 @@ warning("aggregated over time. Consider performing time-removing aggregation you
      for(i in seq_along(all.curves)){
        
        sel_data <- my_data_a[ my_data_a$CurveName == all.curves[i], ]
-       print(paste(i, ": ", all.curves[i]))
+      if(yesprint){
+        print(paste(i, ": ", all.curves[i]))
+      }
        model.out[[i]]<- eval(
          parse( text =
-                  paste("drm(value ~ dose_uM, type = \"continuous\", 
+                  paste("drm(norm_value ~ dose_uM, type = \"continuous\", 
                        lowerl = lowerl, upperl = upperl, separate = TRUE,
                        data = sel_data, fct =", paste0(doseFun, '()', ")")
                   )
          )
        )
-       print(model.out[[i]])
-       
+       if(yesprint){ 
+        print(model.out[[i]])
+       }
      }
    }
     
@@ -447,7 +529,7 @@ warning("aggregated over time. Consider performing time-removing aggregation you
       
       model.out[[i]]<- eval(
         parse( text =
-                 paste("drm(value ~ dose_uM, type = \"continuous\", start = startpars[[i]],
+                 paste("drm(norm_value ~ dose_uM, type = \"continuous\", start = startpars[[i]],
                        lowerl = lowerl, upperl = upperl, separate = TRUE,
                        data = sel_data, fct =", paste0(doseFun, '()', ")")
         )
@@ -465,7 +547,7 @@ warning("aggregated over time. Consider performing time-removing aggregation you
       
       model.out[[i]]<- eval(
         parse( text =
-                 paste("drm(value ~ dose_uM, type = \"continuous\", 
+                 paste("drm(norm_value ~ dose_uM, type = \"continuous\", 
                        lowerl = lowerl, upperl = upperl, separate = TRUE,
                        data = sel_data, fct =", paste0(doseFun, '()', ")")
                  )
@@ -493,7 +575,7 @@ warning("aggregated over time. Consider performing time-removing aggregation you
     
     model.out <- eval(
       parse( text = 
-               paste("drm(value ~ dose_uM, 
+               paste("drm(norm_value ~ dose_uM, 
                      type = \"continuous\", data = my_data_a, 
                      curveid = CurveName, start = starter,
                      separate = TRUE, 
@@ -504,13 +586,13 @@ warning("aggregated over time. Consider performing time-removing aggregation you
       )
       )
     
-    ED_est <- ED(model.out, respLev = EDs)
+    ED_est <- ED(model.out, respLev = EDs, ...)
     output = list(model.out = model.out, ED_est = ED_est, curveNames = all.curves)
   } else{
   } 
     model.out <- eval(
       parse( text = 
-               paste("drm(value ~ dose_uM, 
+               paste("drm(norm_value ~ dose_uM, 
                      type = \"continuous\", data = my_data_a, 
                      curveid = CurveName,
                      separate = TRUE, 
@@ -521,7 +603,7 @@ warning("aggregated over time. Consider performing time-removing aggregation you
       )
       )
     
-    ED_est <- ED(model.out, respLev = EDs)
+    ED_est <- ED(model.out, respLev = EDs, ...)
     output = list(model.out = model.out, ED_est = ED_est, curveNames = all.curves)
     
   }
